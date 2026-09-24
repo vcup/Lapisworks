@@ -35,6 +35,7 @@
 		"OpFlight$CompanionMixin",
 		"ChunkSerializerMixin",
 		"FrameForEachMixin",
+		"VillagerTypeTradeMixin",
 
 		"FabricXplatImplMixin"
 	],
