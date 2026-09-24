@@ -1,14 +1,12 @@
 package com.luxof.lapisworks.mixin;
 
 import at.petrak.hexcasting.api.casting.eval.CastResult;
-import at.petrak.hexcasting.api.casting.eval.OperationResult;
+import at.petrak.hexcasting.api.casting.eval.vm.CastingImage;
 import at.petrak.hexcasting.api.casting.eval.vm.CastingVM;
 import at.petrak.hexcasting.api.casting.eval.vm.SpellContinuation;
 import at.petrak.hexcasting.api.casting.iota.EntityIota;
 import at.petrak.hexcasting.api.casting.iota.Iota;
 import at.petrak.hexcasting.api.casting.iota.PatternIota;
-
-import com.llamalad7.mixinextras.sugar.Local;
 
 import com.luxof.lapisworks.interop.hierophantics.data.Amalgamation;
 import com.luxof.lapisworks.interop.valkyrienskies.ValkyrienUtils;
@@ -31,28 +29,46 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import robotgiggle.hierophantics.HieroMindCastEnv;
 
+/**
+ * Lets a player's fused amalgamations cast along with a spell that refers to that player.
+ *
+ * <p>In hexcasting 0.11.3 {@link PatternIota#execute} contained the whole cast body, so this used to
+ * hook {@code execute}'s HEAD (to remember the stack) plus the {@code new CastResult} instruction
+ * (to read the resulting {@code OperationResult}). 0.11.4 moved that body into the new private
+ * {@code lookupAndOperate(CastingVM, SpellContinuation, boolean)} and left {@code execute} as a
+ * one-line delegate, so the "NEW CastResult" injection point no longer existed anywhere in
+ * {@code execute} and the mixin failed to apply ("Critical injection failure ... Scanned 0
+ * target(s)"), taking the whole game down with it whenever hierophantics was installed.
+ *
+ * <p>Both hooks therefore now live on {@code lookupAndOperate}, which is where 0.11.3's {@code
+ * execute} body went: HEAD still remembers the pre-cast stack, and RETURN reads the image off the
+ * {@link CastResult} that was just built (the same {@code CastingImage} the old injection read off
+ * the {@code OperationResult}). Hooking it there - rather than at {@code execute}'s RETURN - keeps
+ * parenthesised evaluations covered, exactly as the 0.11.3 code did.
+ */
 @Mixin(value = PatternIota.class, remap = false)
 public class PatternIotaMixin2 {
     private ArrayList<Iota> oldStack = new ArrayList<>();
+
     @Inject(
-        method = "execute",
+        method = "lookupAndOperate",
         at = @At("HEAD")
     )
-    public @NotNull void execute(
+    public @NotNull void beforeExecute(
         CastingVM vm,
-        ServerWorld world,
         SpellContinuation continuation,
+        boolean inParens,
         CallbackInfoReturnable<CastResult> cir
     ) {
         if (
             vm.getEnv() instanceof HieroMindCastEnv &&
             vm.getImage().getUserData().getBoolean("counterspell_cast")
-        )
+        ) {
             return;
+        }
         oldStack = new ArrayList<>(vm.getImage().getStack());
     }
 
@@ -74,27 +90,28 @@ public class PatternIotaMixin2 {
     }
 
     @Inject(
-        method = "execute",
-        at = @At(
-            value = "NEW",
-            target = "at/petrak/hexcasting/api/casting/eval/CastResult"
-        ),
-        locals = LocalCapture.CAPTURE_FAILHARD
+        method = "lookupAndOperate",
+        at = @At("RETURN")
     )
-    public @NotNull void execute(
+    public @NotNull void afterExecute(
         CastingVM vm,
-        ServerWorld world,
         SpellContinuation continuation,
-        CallbackInfoReturnable<CastResult> cir,
-        @Local OperationResult result
+        boolean inParens,
+        CallbackInfoReturnable<CastResult> cir
     ) {
         if (
             vm.getEnv() instanceof HieroMindCastEnv &&
             vm.getImage().getUserData().getBoolean("counterspell_cast")
-        )
+        ) {
+            return;
+        }
+
+        CastingImage newImage = cir.getReturnValue().getNewData();
+        // lookupAndOperate builds the CastResult of the mishap path with a null image
+        if (newImage == null)
             return;
 
-        var newStack = new ArrayList<>(result.getNewImage().getStack());
+        var newStack = new ArrayList<>(newImage.getStack());
         newStack.removeAll(oldStack);
 
         Vec3d thisPos = vm.getEnv().mishapSprayPos();
