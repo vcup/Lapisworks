@@ -257,7 +257,8 @@ public class LapisConfig {
 
         if (canIYell) log("Loading config!");
         for (Settings settings : registered) {
-            String thisObjName = settings.clazz().getName();
+            // the config file keys sections by the settings class's simple name (see defaultConfig)
+            String thisObjName = settings.clazz().getSimpleName();
             JsonObject thisObj;
             try {
                 thisObj = obj.getAsJsonObject(thisObjName);
@@ -265,8 +266,10 @@ public class LapisConfig {
                 thisObj = null;
             }
 
-			if (thisObj == null && canIYell) {
-                err("%s does not exist in config as an object!", thisObjName);
+			if (thisObj == null) {
+                if (canIYell) err("%s does not exist in config as an object!", thisObjName);
+                thisObj = new JsonObject();
+                obj.add(thisObjName, thisObj);
 			}
 
             for (ConfigOption<?> co : settings.opts) {
