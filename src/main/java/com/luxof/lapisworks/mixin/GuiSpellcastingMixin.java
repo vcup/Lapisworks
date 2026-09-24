@@ -15,7 +15,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(value = GuiSpellcasting.class, remap = false)
+// NOTE: `tick` below is Minecraft's Screen#tick, which GuiSpellcasting overrides, so the name
+// MUST be remapped: a literal "tick" exists in neither the intermediary nor the SRG runtime,
+// which is what kept this mixin from applying.
+@Mixin(value = GuiSpellcasting.class)
 public class GuiSpellcastingMixin {
     @Inject(
         method = "tick",
@@ -24,8 +27,7 @@ public class GuiSpellcastingMixin {
             target = "at/petrak/hexcasting/client/gui/GuiSpellcasting.closeForReal()V",
             shift = At.Shift.BEFORE
         ),
-        cancellable = true,
-        remap = false
+        cancellable = true
     )
     private void lapisworks$heyWait(CallbackInfo ci) {
         PlayerEntity player = MinecraftClient.getInstance().player;
