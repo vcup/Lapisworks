@@ -450,6 +450,9 @@ Only the devs who can keep up with me...
 - Math engine did not recognize the symbols π and e
 - Random ass crash with mixins specifically for Hexwoven??
 - Thoth's Manipulators weren't working specifically on Thoth's Gambit :dead:
+- The game died on startup with "Missing trade for villager type: lapisworks:jack"
+  - the Jack needs an entry in every villager-type trade table, not just an exemption
+- Amel Rings didn't keep the spellcasting menu open, because that mixin never actually applied
 ### Additions
 - Collar stuff
   - amethyst shard addition
