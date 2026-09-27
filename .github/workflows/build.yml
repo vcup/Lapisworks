@@ -27,4 +27,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Artifacts
-          path: build/libs/
+          path: |
+            fabric/build/libs/lapisworks-fabric-*.jar
+            neoforge/build/libs/lapisworks-neoforge-*.jar
+          if-no-files-found: error
