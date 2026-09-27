@@ -553,6 +553,39 @@ Only the devs who can keep up with me...
 # 1.7.0
 LAPISWORKS IS ON BOTH FORGE AND FABRIC NOW. (is this even required?) (i mean Dryym should be able to play the mod right)
 
+### Additions
+- Native NeoForge build. One source tree, two jars: `lapisworks-fabric` and `lapisworks-neoforge`.
+  - no Sinytra Connector on the NeoForge side, so the mod is remapped properly instead of being
+    bridged at runtime
+- `docs/adr/0001-dual-platform-layout.md` explains why the code is laid out the way it is now
+### Changes
+- The project is three modules now: `common/`, `fabric/`, `neoforge/`
+  - the loader-specific parts go through seams under `com.luxof.lapisworks.platform`, so shared code
+    never names Fabric API, Trinkets or Cardinal Components
+- Trinkets -> Curios on NeoForge, Cardinal Components -> Forge capabilities
+- **no new mod to install.** Architectury API is not a dependency at runtime: the cross-platform
+  layer is Lapisworks' own, backed by Fabric API on Fabric and Forge events on NeoForge.
+  (Architectury Loom remains the *build* tool.) Fabric's `depends` is unchanged from before the port.
+### Fixes
+- `zh_cn` was missing two keys and kept two stale ones, so part of the book showed English or a raw
+  key
+- the creative tab listed internal render-helper items (`collar_with_model`, `collar_bell`, the
+  "worn" necklaces) that have no names, so they showed up as `item.lapisworks.collar_with_model`
+  next to real items and looked like duplicates
+- `hextended`'s 28 items are registered from static initializers that only append to `ModItems.ITEMS`;
+  the actual write happens in `ModItems.init_shit()`. The port keeps `Lapixtended`'s init before that
+  flush, as it was before. (Not a bug fix -- just an ordering constraint worth not tripping over.)
+- on NeoForge only one ring could be worn, where Fabric allowed two (`hand/ring` and `offhand/ring`
+  both existed on Trinkets). Curios' `ring` slot is now sized to 2.
+- `BaseCastingWispMixin` didn't apply on NeoForge because it looked up a Yarn name in an SRG build
+- `MediaJarBlockEntityMixin` was gated on hexical being present rather than on `>= 2.0.0`, so it
+  looked for a class 1.5.0 doesn't have and complained on every startup
+- `cradle`, `rod` and `amel_constructs/holder` dropped nothing on NeoForge: their loot tables were
+  left behind in the Fabric module. Forge resolves `minecraft:item` loot entries while parsing the
+  table and has no `mod_loaded` loot condition, so a table naming an item from an absent mod fails
+  to parse instead of being skipped. Those tables now reach their item through a tag
+  (`required: false`), which parses either way and needs no per-platform copy.
+
 
 # hm
 clairvoyance (future-seeing)  
