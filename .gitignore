@@ -27,10 +27,16 @@ out
 # gradle
 build
 .gradle
+# Architectury Loom regenerates this per build; it is never a source file
+.architectury-transformer
 
 # other
 eclipse
 run
+# the Fabric client dev run lives in its own directory so it can run alongside the server
+run-client
+# javac argument dumps from manual compile checks
+javac.*.args
 
 # Files from Forge MDK
 forge*changelog.txt

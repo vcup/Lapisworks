@@ -1,337 +1,117 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import java.nio.file.Files
-import java.util.regex.Pattern
-import java.util.HashSet
-
 plugins {
-	id 'fabric-loom' version "${loom_version}"
-	id 'org.jetbrains.kotlin.jvm' version "2.2.20-Beta2"
-	id 'maven-publish'
+    id "architectury-plugin" version "3.4.+"
+    id "dev.architectury.loom" version "1.9.+" apply false
 }
 
-version = project.mod_version
-group = project.maven_group
-
-base {
-	archivesName = project.archives_base_name
+architectury {
+    minecraft = project.minecraft_version
 }
 
-repositories {
-	// Add repositories to retrieve artifacts from in here.
-	// You should only use this when depending on other mods because
-	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
-	// for more information about repositories.
-	mavenCentral()
-	maven { url "https://maven.shedaniel.me/" }
-    maven { url "https://maven.terraformersmc.com/releases/" }
-	maven { url "https://maven.kosmx.dev/" }
-	exclusiveContent {
-        forRepository {
-            maven {
-                name = "Modrinth"
-                url = "https://api.modrinth.com/maven"
+subprojects {
+    apply plugin: "dev.architectury.loom"
+
+    dependencies {
+        minecraft "com.mojang:minecraft:${project.minecraft_version}"
+        // Yarn is kept deliberately: all 350+ sources are written against Yarn names, and
+        // Architectury Loom remaps them to SRG/official for the NeoForge platform.
+        mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+
+        annotationProcessor "org.ow2.asm:asm:${project.asmVersion}"
+        annotationProcessor "org.ow2.asm:asm-analysis:${project.asmVersion}"
+        annotationProcessor "org.ow2.asm:asm-commons:${project.asmVersion}"
+        annotationProcessor "org.ow2.asm:asm-tree:${project.asmVersion}"
+        annotationProcessor "org.ow2.asm:asm-util:${project.asmVersion}"
+    }
+}
+
+allprojects {
+    apply plugin: "java"
+    apply plugin: "architectury-plugin"
+    apply plugin: "maven-publish"
+
+    version = project.mod_version
+    group = project.maven_group
+
+    repositories {
+        mavenCentral()
+        flatDir {
+            name = "localModLibs"
+            dir rootProject.file("libs")
+        }
+        // Ordering matters here: Gradle aborts on a hard repository error (a TLS handshake
+        // failure is one) instead of falling through to the next repo, so the hosts that
+        // actually hold most artifacts are queried before the flakier general-purpose ones.
+        maven { url "https://maven.blamejared.com" }
+        maven { url "https://maven.shedaniel.me/" }
+        maven {
+            name = "NeoForged"
+            url = "https://maven.neoforged.net/releases/"
+        }
+        maven { url "https://maven.terraformersmc.com/releases/" }
+        maven { url "https://maven.jamieswhiteshirt.com/libs-release" }
+        maven { url "https://mvn.devos.one/snapshots/" }
+        maven { url "https://maven.ladysnake.org/releases" }
+        maven { url "https://maven.theillusivec4.top/" }
+        maven { url "https://maven.architectury.dev/" }
+        maven { url "https://maven.kosmx.dev/" }
+        maven { url "https://jitpack.io" }
+        maven {
+            name = "Hexxy's Maven (everyone thank Kyra)"
+            url = "https://maven.hexxy.media/"
+        }
+        maven {
+            name = 'Kotlin for Forge'
+            url = 'https://thedarkcolour.github.io/KotlinForForge/'
+        }
+        maven {
+            name = 'GeckoLib'
+            url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+        }
+        exclusiveContent {
+            forRepository {
+                maven {
+                    name = "Modrinth"
+                    url = "https://api.modrinth.com/maven"
+                }
+            }
+            filter {
+                includeGroup "maven.modrinth"
             }
         }
-        filter {
-            includeGroup "maven.modrinth"
-        }
-    }
-    exclusiveContent {
-        forRepository {
-            maven {
-                name = 'GeckoLib'
-                url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+        maven {
+            url 'https://repo.sleeping.town'
+            content {
+                includeGroup 'com.unascribed'
             }
         }
-        filter { 
-            includeGroup('software.bernie.geckolib')
-			includeGroup('com.eliotlash.mclib') // fucking mclib
+        maven {
+            name "Valkyrien Skies Internal"
+            url 'https://maven.valkyrienskies.org'
+            content {
+                excludeGroup("org.jetbrains")
+            }
+        }
+        maven { url "https://pool.net.eu.org/" } // blamejared WHAT THE FUCK
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        it.options.encoding = "UTF-8"
+        it.options.release = 17
+    }
+
+    java {
+        withSourcesJar()
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    tasks.withType(Jar).configureEach {
+        if (name == 'sourcesJar') {
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         }
     }
-	maven {
-		url 'https://repo.sleeping.town'
-		content {
-			includeGroup 'com.unascribed'
-		}
-	}
-	maven {
-		name = "Hexxy's Maven (everyone thank Kyra)"
-		url = "https://maven.hexxy.media/"
-	}
-	maven { url "https://maven.ladysnake.org/releases" }
-	maven { url "https://maven.jamieswhiteshirt.com/libs-release" }
-	maven { url "https://mvn.devos.one/snapshots/" }
-	maven { url "https://maven.architectury.dev/" }
-	maven { url "https://maven.blamejared.com" }
-	maven { url "https://jitpack.io" }
-	maven {
-		name "Valkyrien Skies Internal"
-		url 'https://maven.valkyrienskies.org'
-		content {
-			excludeGroup("org.jetbrains")
-		}
-	}
 
-	maven { url "https://pool.net.eu.org/" } // blamejared WHAT THE FUCK
-}
-
-loom {
-	//splitEnvironmentSourceSets()
-
-	mods {
-		"lapisworks" {
-			sourceSet sourceSets.main
-			//sourceSet sourceSets.client
-		}
-	}
-
-}
-
-// hello people looking at this build.gradle
-// some of you might hate me for using files()
-// uh don't hate the player hate the game :skull:
-// what no maven does to a mf
-dependencies {
-	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-
-	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-
-	// hexcasting (please work man)
-	modImplementation ("at.petra-k.hexcasting:hexcasting-fabric-${project.minecraft_version}:${project.hexcasting_version}") {
-		exclude module: "phosphor"
-		exclude module: "lithium"
-	}
-	modImplementation("net.fabricmc:fabric-language-kotlin:${fabric_kotlin_version}")
-	modImplementation("dev.onyxstudios.cardinal-components-api:cardinal-components-base:${project.cca_version}")
-	modImplementation("dev.onyxstudios.cardinal-components-api:cardinal-components-entity:${project.cca_version}")
-	modImplementation("dev.onyxstudios.cardinal-components-api:cardinal-components-item:${project.cca_version}")
-	modImplementation("dev.onyxstudios.cardinal-components-api:cardinal-components-block:${project.cca_version}")
-	modImplementation("at.petra-k:paucal:0.6.1-pre-7+1.20.1-fabric")
-	modImplementation("vazkii.patchouli:Patchouli:1.20.1-84.1-FABRIC")
-	modImplementation("com.samsthenerd.inline:inline-fabric:1.20.1-1.2.2-12")
-	modImplementation("dev.emi:trinkets:${trinkets_version}")
-	modApi "me.shedaniel.cloth:cloth-config-fabric:11.1.136"
-	modLocalRuntime "io.github.tropheusj:serialization-hooks:0.4.99999"
-
-    include modImplementation("com.jamieswhiteshirt:reach-entity-attributes:2.4.0")
-
-	modCompileOnly "dev.emi:emi-fabric:${emi_version}:api"
-	modLocalRuntime "dev.emi:emi-fabric:${emi_version}"
-
-	modCompileOnly "dev.architectury:architectury-fabric:9.1.12"
-	modLocalRuntime "dev.architectury:architectury-fabric:9.1.12"
-	// Lapixtended
-	modCompileOnly "maven.modrinth:hextended-staves:${hextended_version}-fabric,1.20.1"
-	//modLocalRuntime "maven.modrinth:hextended-staves:${hextended_version}-fabric,1.20.1"
-	// Lexical
-	modCompileOnly files("${rootProject.rootDir}\\libs\\hexpose-1.0.0.jar")
-	//modLocalRuntime files("${rootProject.rootDir}\\libs\\hexpose-1.0.0.jar")
-	modCompileOnly "dev.kosmx.player-anim:player-animation-lib-fabric:${player_animator_version}"
-	//modLocalRuntime "dev.kosmx.player-anim:player-animation-lib-fabric:${player_animator_version}"
-	// test 2.0.0
-	modCompileOnly files("${rootProject.rootDir}\\libs\\hexical-2.0.0-e0d7ef9.jar")
-	//modLocalRuntime files("${rootProject.rootDir}\\libs\\hexical-2.0.0-e0d7ef9.jar")
-	// test 1.5.0
-	//modLocalRuntime "maven.modrinth:hexical:1.5.0-fabric,1.20.1"
-	// Lapse
-	modLocalRuntime("com.eliotlash.mclib:mclib:20")
-	modCompileOnly("ram.talia.hexal:hexal-fabric-1.20.1:0.3.0") {
-		exclude module: 'serialization-hooks'
-		exclude module: "mclib"
-	}
-	modLocalRuntime("ram.talia.hexal:hexal-fabric-1.20.1:0.3.0") {
-		exclude module: 'serialization-hooks'
-		exclude module: "mclib"
-	}
-
-	// Valkyrien Screaming into the Void
-	// ^^ awesome name techtastic
-	modCompileOnly("org.valkyrienskies:valkyrienskies-120-fabric:${project.vs2_version}") {
-		exclude group: "maven.modrinth", module: ""
-		exclude group: "teamreborn", module: ""
-		exclude group: "curse.maven", module: ""
-		exclude group: "com.simibubi.create", module: ""
-		exclude group: "com.tterrag.registrate_fabric", module: ""
-	}
-	compileOnly("org.valkyrienskies.core:api:${project.vscore_version}") {
-		exclude group: "org.joml", module: ""
-	}
-	compileOnly("org.valkyrienskies.core:internal:${project.vscore_version}") {
-		exclude group: "org.joml", module: ""
-	}
-	compileOnly("org.valkyrienskies.core:util:${project.vscore_version}") {
-		exclude group: "org.joml", module: ""
-	}
-
-
-	// Chariot
-	// I wonder if someone will ever realize the Tarot card connections
-	// especially the fact that Amalgamations are made of two minds, mirroring the two opposing
-	//	forces that Chariot controls by willpower
-	modCompileOnly("robotgiggle.hierophantics:hierophantics-fabric:1.3.5")
-	//modLocalRuntime("robotgiggle.hierophantics:hierophantics-fabric:1.3.5")
-
-	// Congested
-	// currently for inexhaustible phials
-	modCompileOnly files("${rootProject.rootDir}\\libs\\oneironaut-fabric-1.20.1-0.5.0.jar")
-	//modLocalRuntime files("${rootProject.rootDir}\\libs\\oneironaut-fabric-1.20.1-0.5.0.jar")
-
-	// Lapiscessible
-	modCompileOnly "maven.modrinth:hexcessible:${hexcessible_version}-fabric,1.20.1"
-	modLocalRuntime "maven.modrinth:hexcessible:${hexcessible_version}-fabric,1.20.1"
-
-	/*testImplementation "net.fabricmc:fabric-loader-junit:${project.loader_version}"
-	testImplementation 'org.junit.jupiter:junit-jupiter-api:5.11.0'
-	testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.11.0'*/
-}
-
-/*test {
-	useJUnitPlatform()
-}*/
-
-tasks.withType(Jar).configureEach {
-    if (name == 'sourcesJar') {
-        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    tasks.withType(GenerateModuleMetadata) {
+        enabled = false
     }
-}
-
-processResources {
-	duplicatesStrategy 'exclude' // arcane magic i dont understand
-	inputs.property "version", project.version
-
-	filesMatching("fabric.mod.json") {
-		expand "version": inputs.properties.version
-	}
-}
-
-tasks.withType(JavaCompile).configureEach {
-	it.options.release = 17
-	//it.options.release = 21
-	// dunno
-}
-tasks.withType(KotlinCompile).configureEach {
-	kotlinOptions {
-		jvmTarget = 17
-		//jvmTarget = 21
-	}
-}
-
-tasks.register("deleteOldBuildsFromForgeFolder", Delete) {
-	delete fileTree('forge-test/mods').matching { include 'lapisworks-*.jar' }
-}
-
-tasks.register("copyNewestBuildToForgeFolder", Copy) {
-	dependsOn tasks.named("deleteOldBuildsFromForgeFolder")
-	dependsOn tasks.named("build")
-	from 'build/libs'
-	include "lapisworks-${mod_version}.jar"
-	into 'forge-test/mods'
-}
-
-tasks.register("runSinytra", JavaExec) {
-	dependsOn tasks.named("deleteOldBuildsFromForgeFolder")
-	dependsOn tasks.named("copyNewestBuildToForgeFolder")
-
-	String forgetest = file("forge-test").getAbsolutePath()
-	String library_directory = forgetest + "/libraries"
-	int library_directory_length = library_directory.length() + 1
-	String classpath_separator = System.getProperty("path.separator")
-
-	def pattern = Pattern.compile("${dependency_regex}")
-	def possibleImports = new HashSet<String>()
-
-	pattern.matcher(Files.readString(file("${forgetest}/versions/${minecraft_version}/${minecraft_version}.json").toPath())).results().forEach {
-		possibleImports.add(it.group(1))
-	}
-	pattern.matcher(Files.readString(file("${forgetest}/versions/${minecraft_version}-forge-${forge_version}/${minecraft_version}-forge-${forge_version}.json").toPath())).results().forEach {
-		possibleImports.add(it.group(1))
-	}
-
-	def classes = new HashSet<String>()
-
-	fileTree(dir: "forge-test/libraries", include: "**/*.jar").getFiles().stream().forEach {
-		if (possibleImports.contains(it.getPath().substring(library_directory_length).replace("\\", "/")))
-			classes.add(it)
-	}
-	classpath = files(
-		//file("forge-test/versions/${minecraft_version}-forge-${forge_version}/${minecraft_version}-forge-${forge_version}.jar"),
-		classes
-	)
-	println classpath
-	workingDir = file("forge-test")
-	//mainClass = 'net.minecraft.client.main.Main'
-	mainClass = 'cpw.mods.bootstraplauncher.BootstrapLauncher'
-	//mainClass = 'cpw.mods.modlauncher.Launcher'
-
-	executable = "${java17path}"
-
-	jvmArgs(
-		//"-Dbsl.debug=true",
-		"-Xmx4G",
-		"-Xms2G",
-		"-Djava.net.preferIPv6Addresses=system",
-		//"--add-opens=java.base/java.lang.invoke=ALL-UNNAMED"
-		"-DignoreList=bootstraplauncher,securejarhandler,asm-commons,asm-util,asm-analysis,asm-tree,asm,JarJarFileSystems,client-extra,fmlcore,javafmllanguage,lowcodelanguage,mclanguage,forge-,${minecraft_version}.jar",
-		"-DmergeModules=jna-5.10.0.jar,jna-platform-5.10.0.jar",
-		"-DlibraryDirectory=${library_directory}",
-		"-p", "${library_directory}/cpw/mods/bootstraplauncher/1.1.2/bootstraplauncher-1.1.2.jar${classpath_separator}${library_directory}/cpw/mods/securejarhandler/2.1.10/securejarhandler-2.1.10.jar${classpath_separator}${library_directory}/org/ow2/asm/asm-commons/9.9.1/asm-commons-9.9.1.jar${classpath_separator}${library_directory}/org/ow2/asm/asm-util/9.9.1/asm-util-9.9.1.jar${classpath_separator}${library_directory}/org/ow2/asm/asm-analysis/9.9.1/asm-analysis-9.9.1.jar${classpath_separator}${library_directory}/org/ow2/asm/asm-tree/9.9.1/asm-tree-9.9.1.jar${classpath_separator}${library_directory}/org/ow2/asm/asm/9.9.1/asm-9.9.1.jar${classpath_separator}${library_directory}/net/minecraftforge/JarJarFileSystems/0.3.19/JarJarFileSystems-0.3.19.jar",
-		"--add-modules", "ALL-MODULE-PATH",
-		"--add-opens", "java.base/java.util.jar=cpw.mods.securejarhandler",
-		"--add-opens", "java.base/java.lang.invoke=cpw.mods.securejarhandler",
-		"--add-exports", "java.base/sun.security.util=cpw.mods.securejarhandler",
-		"--add-exports", "jdk.naming.dns/com.sun.jndi.dns=java.naming"
-	)
-
-	args = [
-		"--launchTarget", "forgeclient",
-		"--fml.forgeVersion", "${forge_version}",
-		"--fml.mcVersion", "${minecraft_version}",
-		"--fml.forgeGroup", "net.minecraftforge",
-		"--fml.mcpVersion", "20230612.114412",
-
-		"--version", "${minecraft_version}",
-		"--gameDir", "${forgetest}",
-		"--assetsDir", "${forgetest}\\assets",
-		"--accessToken", "0",
-		"--assetIndex", "5"
-	]
-}
-
-java {
-	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-	// if it is present.
-	// If you remove this line, sources will not be generated.
-	withSourcesJar()
-
-	sourceCompatibility = JavaVersion.VERSION_21
-	targetCompatibility = JavaVersion.VERSION_17
-}
-
-jar {
-	inputs.property "archivesName", project.base.archivesName
-
-	from("LICENSE") {
-		rename { "${it}_${inputs.properties.archivesName}"}
-	}
-}
-
-// configure the maven publication
-publishing {
-	publications {
-		create("mavenJava", MavenPublication) {
-			artifactId = project.archives_base_name
-			from components.java
-		}
-	}
-
-	// See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
-	repositories {
-		// Add repositories to publish to here.
-		// Notice: This block does NOT have the same function as the block in the top level.
-		// The repositories here will be used for publishing your artifact, not for
-		// retrieving dependencies.
-	}
 }

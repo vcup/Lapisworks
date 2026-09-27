@@ -80,5 +80,6 @@ regex = "{^_pattern_regex}"
 # source paths
 
 [_project]
-src = "../src"
+# The mod became a multi-loader build, so the shared sources moved from src/ to common/src/.
+src = "../common/src"
 package = "{src}/main/java/com/luxof/lapisworks"
