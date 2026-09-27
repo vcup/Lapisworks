@@ -1,0 +1,16 @@
+{
+	"required": false,
+	"package": "com.luxof.lapisworks.mixin",
+	"compatibilityLevel": "JAVA_17",
+	"minVersion": "0.8",
+	"mixins": [
+		"ItemEntityMixin2"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"plugin": "com.luxof.lapisworks.mixin.plugins.LapixicalMixinConfigPlugin",
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}

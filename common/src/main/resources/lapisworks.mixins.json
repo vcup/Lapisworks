@@ -1,0 +1,49 @@
+{
+	"required": true,
+	"package": "com.luxof.lapisworks.mixin",
+	"compatibilityLevel": "JAVA_17",
+	"minVersion": "0.8",
+	"mixins": [
+		"LivingEntityMixin",
+		"PlayerBasedCastEnvMixin",
+		"EntityMixin",
+		"PlayerEntityMixin",
+		"ServerPlayerEntityMixin",
+		"PatternRegistryManifestMixin",
+		"VillagerEntityMixin",
+		"CastingEnvironmentMixin",
+		"CircleExecutionStateMixin",
+		"CircleExecutionStateMixin2",
+		"PatternIotaMixin",
+		"OpMakeBattery$SpellMixin",
+		"BlockEntityAbstractImpetusMixin",
+		"LoseJobOnSiteLossTaskMixin",
+		"IotaAccessor",
+		"ItemEntityMixin",
+		"PlayerBasedCastEnvAccessor",
+		"PatternProcessorMixin",
+		"MishapDisallowedSpellMixin",
+		"HexAPIMixin",
+		"CollarControllableEntityMixin",
+		"StatusEffectInstanceMixin",
+		"ServerWorldMixin",
+		"OpFlight$CompanionMixin",
+		"ChunkSerializerMixin",
+		"FrameForEachMixin",
+		"VillagerTypeTradeMixin"
+	],
+	"client": [
+		"GuiSpellcastingMixin",
+		"ItemRendererMixin",
+		"ClientPlayNetworkHandlerMixin",
+		"MobEntityRendererMixin",
+		"AbstractClientPlayerEntityMixin",
+		"ClientCastingStackMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}

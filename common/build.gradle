@@ -1,0 +1,69 @@
+archivesBaseName = "${project.archives_base_name}-common"
+
+architectury {
+    common(project.enabledPlatforms.split(","))
+}
+
+// NOTE: common/ is deliberately free of Fabric API, Trinkets and Cardinal Components.
+// Everything loader-specific goes through com.luxof.lapisworks.platform, whose
+// implementations live in fabric/ and neoforge/.
+dependencies {
+    // Only for the @Environment/@EnvType annotations; no loader classes are used from here.
+    modCompileOnly "net.fabricmc:fabric-loader:${project.loader_version}"
+
+    // Hex Casting and its own stack. The api/ packages used by shared code are identical
+    // between the Fabric and Forge builds, so compiling common against the Fabric artifacts
+    // and running against the platform ones is what the interop code already assumes.
+    modCompileOnly("at.petra-k.hexcasting:hexcasting-fabric-${project.minecraft_version}:${project.hexcasting_version}") {
+        exclude module: "phosphor"
+        exclude module: "lithium"
+    }
+    modCompileOnly "at.petra-k:paucal:0.6.1-pre-7+1.20.1-fabric"
+    modCompileOnly "vazkii.patchouli:Patchouli:${project.minecraft_version}-${project.patchouli_version}-FABRIC"
+    modCompileOnly "me.shedaniel.cloth:cloth-config-fabric:${project.clothconfig_version}"
+
+    // EMI's api/ package name is loader-agnostic; each platform supplies its own runtime jar.
+    modCompileOnly "dev.emi:emi-fabric:${project.emi_version}:api"
+
+    modCompileOnly files("${rootProject.rootDir}/libs/serialization-hooks-0.4.99999.jar")
+
+    // --- optional interop -------------------------------------------------------------
+    // These are compile-only so the shared code links; every use is behind an
+    // isModLoaded() guard, so the modules that have no native NeoForge build simply
+    // stay dormant there instead of breaking class loading.
+    modCompileOnly "maven.modrinth:hextended-staves:${project.hextended_version}-fabric,1.20.1"
+    modCompileOnly files("${rootProject.rootDir}/libs/hexpose-1.0.0.jar")
+    modCompileOnly files("${rootProject.rootDir}/libs/hexical-2.0.0-e0d7ef9.jar")
+    modCompileOnly files("${rootProject.rootDir}/libs/oneironaut-fabric-1.20.1-0.5.0.jar")
+    modCompileOnly("ram.talia.hexal:hexal-fabric-1.20.1:0.3.0") {
+        exclude module: 'serialization-hooks'
+        exclude module: "mclib"
+    }
+    modCompileOnly("robotgiggle.hierophantics:hierophantics-fabric:${project.hierophantics_version}")
+    modCompileOnly "maven.modrinth:hexcessible:${project.hexcessible_version}-fabric,1.20.1"
+    modCompileOnly("org.valkyrienskies:valkyrienskies-120-fabric:${project.vs2_version}") {
+        exclude group: "maven.modrinth", module: ""
+        exclude group: "teamreborn", module: ""
+        exclude group: "curse.maven", module: ""
+        exclude group: "com.simibubi.create", module: ""
+        exclude group: "com.tterrag.registrate_fabric", module: ""
+    }
+    compileOnly("org.valkyrienskies.core:api:${project.vscore_version}") { exclude group: "org.joml", module: "" }
+    compileOnly("org.valkyrienskies.core:internal:${project.vscore_version}") { exclude group: "org.joml", module: "" }
+    compileOnly("org.valkyrienskies.core:util:${project.vscore_version}") { exclude group: "org.joml", module: "" }
+    // modCompileOnly (not compileOnly) so Loom remaps this Fabric mod's intermediary names to Yarn;
+    // a plain compileOnly dependency would bring in class_XXXX names and fail to resolve.
+    modCompileOnly("com.jamieswhiteshirt:reach-entity-attributes:${project.reach_entity_attributes_version}")
+
+    // Carried over from the pre-port build, which declared it on the same terms.
+    modCompileOnly "dev.kosmx.player-anim:player-animation-lib-fabric:${project.player_animator_version}"
+}
+
+publishing {
+    publications {
+        mavenCommon(MavenPublication) {
+            artifactId = project.archivesBaseName
+            from components.java
+        }
+    }
+}

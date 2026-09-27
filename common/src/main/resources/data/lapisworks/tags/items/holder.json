@@ -1,0 +1,6 @@
+﻿{
+    "replace": false,
+    "values": [
+        { "id": "lapisworks:amel_constructs/holder", "required": false }
+    ]
+}
