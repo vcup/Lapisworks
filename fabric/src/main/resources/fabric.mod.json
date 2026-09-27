@@ -1,0 +1,53 @@
+{
+	"schemaVersion": 1,
+	"id": "lapisworks",
+	"version": "${version}",
+	"name": "Lapisworks",
+	"description": "Harness Lapis' enchanting power with Hex Casting's media and enchant.",
+	"authors": [
+		"Luxof"
+	],
+	"contact": {
+		"sources": "https://github.com/Real-Luxof/Lapisworks"
+	},
+	"license": "MIT",
+	"icon": "assets/lapisworks/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.luxof.lapisworks.fabric.LapisworksFabric"
+		],
+		"client": [
+			"com.luxof.lapisworks.fabric.LapisworksFabricClient"
+		],
+		"emi": [
+			"com.luxof.lapisworks.interop.emi.LapisworksEmiPlugin"
+		],
+		"cardinal-components": [
+			"com.luxof.lapisworks.fabric.LapisworksCardinalComponents"
+		]
+	},
+	"mixins": [
+		"lapisworks.mixins.json",
+		"lapisworks.fulllapixical.mixins.json",
+		"lapisworks.lapixical.mixins.json",
+		"lapisworks.chariot.mixins.json",
+		"lapisworks.lapisal.mixins.json",
+		"lapisworks.lapiscessible.mixins.json"
+	],
+	"depends": {
+		"java": ">=17",
+		"fabricloader": ">=0.16.14",
+		"fabric-api": "*",
+		"minecraft": "~1.20.1",
+		"hexcasting": ">=0.11.2-pre-701",
+		"trinkets": ">=3.7.2"
+	},
+	"suggests": {
+		"hextended": ">=2.0.1",
+		"hexical": ">=1.5.0",
+		"hexal": ">=0.3.0",
+		"hierophantics": ">=1.3.5",
+		"emi": ">=1.1.22"
+	}
+}

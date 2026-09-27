@@ -1,0 +1,81 @@
+modLoader = "javafml"
+loaderVersion = "[47,)"
+license = "MIT"
+
+[[mods]]
+modId = "lapisworks"
+version = "${version}"
+displayName = "Lapisworks"
+logoFile = "assets/lapisworks/icon.png"
+authors = "Luxof"
+description = '''
+Harness Lapis' enchanting power with Hex Casting's media and enchant.
+'''
+
+# On Minecraft 1.20.1 NeoForge identifies itself with the "forge" mod id and keeps the
+# net.minecraftforge.* packages, so this is what a NeoForge-targeted 1.20.1 mod depends on.
+[[dependencies.lapisworks]]
+modId = "forge"
+mandatory = true
+versionRange = "[47,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.lapisworks]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.20.1,1.21)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.lapisworks]]
+modId = "hexcasting"
+mandatory = true
+versionRange = "[0.11.2,)"
+ordering = "NONE"
+side = "BOTH"
+
+# Curios replaces Fabric's Trinkets as the accessory system on this platform.
+[[dependencies.lapisworks]]
+modId = "curios"
+mandatory = true
+versionRange = "[5,)"
+ordering = "NONE"
+side = "BOTH"
+
+# Optional: only the corresponding interop module uses these, and each is guarded by an
+# isModLoaded check, so they may be absent.
+[[dependencies.lapisworks]]
+modId = "hexal"
+mandatory = false
+versionRange = "[0.3,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.lapisworks]]
+modId = "hierophantics"
+mandatory = false
+versionRange = "[1.3,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.lapisworks]]
+modId = "oneironaut"
+mandatory = false
+versionRange = "[0,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.lapisworks]]
+modId = "valkyrienskies"
+mandatory = false
+versionRange = "[0,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.lapisworks]]
+modId = "emi"
+mandatory = false
+versionRange = "[1.1,)"
+ordering = "NONE"
+side = "CLIENT"
